@@ -7,7 +7,7 @@ variables:
   azureResourceGroup: vm-rg-raj
 
 pool:
-  name: "A11"
+  name: "linux-agent"
 
 stages:
   - stage: Build
