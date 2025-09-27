@@ -52,8 +52,8 @@ stages:
               TargetFolder: '$(Build.SourcesDirectory)'
 
           - script: |
-              echo "Listing files in Docker build context:"
-              dir $(Build.SourcesDirectory)/Amazon-Web/target
+              echo Listing files in Docker build context:
+              dir $(Build.SourcesDirectory)\Amazon-Web\target
             displayName: 'Verify WAR in build context'
 
           - task: Docker@2
@@ -85,3 +85,7 @@ stages:
                 - task: AzureWebAppContainer@1
                   inputs:
                     azureSubscription: 'JH11'
+                    appName: '$(azureWebAppName)'
+                    containers: '$(dockerImageName):latest'
+
+
