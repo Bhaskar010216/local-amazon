@@ -31,58 +31,57 @@ stages:
             inputs:
               pathToPublish: '$(Build.ArtifactStagingDirectory)'
               artifactName: 'drop'
-- stage: Docker
-  displayName: 'Docker Build and Push'
-  dependsOn: Build
-  jobs:
-    - job: DockerBuildPush
-      displayName: 'Build & Push Docker Image'
-      steps:
-        - task: DownloadPipelineArtifact@2
-          inputs:
-            artifactName: 'drop'
-            targetPath: '$(Build.SourcesDirectory)/docker-context'
 
-        - task: CopyFiles@2
-          displayName: 'Prepare WAR for Docker build'
-          inputs:
-            SourceFolder: '$(Build.SourcesDirectory)/docker-context'
-            Contents: '*.war'
-            TargetFolder: '$(Build.SourcesDirectory)'
+  - stage: Docker
+    displayName: 'Docker Build and Push'
+    dependsOn: Build
+    jobs:
+      - job: DockerBuildPush
+        displayName: 'Build & Push Docker Image'
+        steps:
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              artifactName: 'drop'
+              targetPath: '$(Build.SourcesDirectory)/docker-context'
 
-        - script: |
-            echo "Listing files in Docker build context:"
-            dir $(Build.SourcesDirectory)/Amazon-Web/target
-          displayName: 'Verify WAR in build context'
+          - task: CopyFiles@2
+            displayName: 'Prepare WAR for Docker build'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/docker-context'
+              Contents: '*.war'
+              TargetFolder: '$(Build.SourcesDirectory)'
 
-        - task: Docker@2
-          inputs:
-            command: 'login'
-            containerRegistry: 'bhaskar-dockerhub'
+          - script: |
+              echo "Listing files in Docker build context:"
+              dir $(Build.SourcesDirectory)/Amazon-Web/target
+            displayName: 'Verify WAR in build context'
 
-        - task: Docker@2
-          inputs:
-            command: 'buildAndPush'
-            repository: '$(dockerImageName)'
-            dockerfile: 'Dockerfile'
-            buildContext: '$(Build.SourcesDirectory)'
-            tags: |
-              latest
-              $(Build.BuildId)
-- stage: Deploy
-  displayName: 'Deploy to Azure Web App'
-  dependsOn: Docker
-  jobs:
-    - deployment: DeployWebApp
-      displayName: 'Deploy Container to Azure'
-      environment: 'dev'
-      strategy:
-        runOnce:
-          deploy:
-            steps:
-              - task: AzureWebAppContainer@1
-                inputs:
-                  azureSubscription: 'JH11'
-                  appName: '$(azureWebAppName)'
-                  containers: '$(dockerImageName):latest'
+          - task: Docker@2
+            inputs:
+              command: 'login'
+              containerRegistry: 'bhaskar-dockerhub'
 
+          - task: Docker@2
+            inputs:
+              command: 'buildAndPush'
+              repository: '$(dockerImageName)'
+              dockerfile: 'Dockerfile'
+              buildContext: '$(Build.SourcesDirectory)'
+              tags: |
+                latest
+                $(Build.BuildId)
+
+  - stage: Deploy
+    displayName: 'Deploy to Azure Web App'
+    dependsOn: Docker
+    jobs:
+      - deployment: DeployWebApp
+        displayName: 'Deploy Container to Azure'
+        environment: 'dev'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebAppContainer@1
+                  inputs:
+                    azureSubscription: 'JH11'
